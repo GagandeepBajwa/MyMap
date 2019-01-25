@@ -1,0 +1,839 @@
+<!--Author:Gagandeep Singh -->
+<!DOCTYPE html>
+
+<html>
+<head>
+<style>
+
+#map{
+
+height:400px;
+width: 100%;
+
+}
+
+
+.btn-group button {
+    background-color: #4CAF50; /* Green background */
+    border: 1px solid green; /* Green border */
+    color: white; /* White text */
+    padding: 10px 24px; /* Some padding */
+    cursor: pointer; /* Pointer/hand icon */
+    float: left; /* Float the buttons side by side */
+}
+
+.btn-group button:not(:last-child) {
+    border-right: none; /* Prevent double borders */
+}
+
+/* Clear floats (clearfix hack) */
+.btn-group:after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+/* Add a background color on hover */
+.btn-group button:hover {
+    background-color: #3e8e41;
+}
+
+#button{
+	background-color: #4CAF50; /* Green background */
+    border: 1px solid green; /* Green border */
+    color: white; /* White text */
+    padding: 10px 24px; /* Some padding */
+    cursor: pointer; /* Pointer/hand icon */
+    float: left; /* Float the buttons side by side */
+}
+
+.button:hover{
+
+   background-color: #3e8e41;
+
+
+}
+
+
+
+</style>
+<script src ="jsgraphs.js"></script>
+
+<script src="https://www.google.com/jsapi"></script>
+
+
+
+</head>
+<body>
+<h3>Find the shortest path between two cities</h3>
+
+<!--The div element for the map -->
+<div id="map"></div>
+
+
+<!-- functions to [erform all actions -->
+<script>
+
+//bunch of variables
+var LatLngCities=[]; // latlong of all the cities 
+var cities=[]; //all the cities to be mandatory visited are stored here.
+var rectangle;
+var map;
+var infoWindow;
+var city1;
+var city2;
+var geocoder;
+var num_cities_in_between; // total number of cities to be visited
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: {lat: 50.6745, lng: -120.3273},
+    zoom: 4
+  });
+
+//declaring the bounds
+var bounds = {
+    north: 50.7872,
+    south: 50.6038,
+    east: -120.20,
+    west: -120.53
+  };
+
+// Define the rectangle and set its editable property to true.
+rectangle = new google.maps.Rectangle({
+    bounds: bounds,
+    editable: true,
+    draggable: true
+  });
+
+ //rectangle.setMap(map);
+
+  // Add an event listener on the rectangle.
+  //rectangle.addListener('bounds_changed', showNewRect);
+
+  // Define an info window on the map.
+  //infoWindow = new google.maps.InfoWindow();
+}
+// Show the new coordinates for the rectangle in an info window.
+
+
+
+function showNewRect(event) {
+  var ne = rectangle.getBounds().getNorthEast();
+  var sw = rectangle.getBounds().getSouthWest();
+
+
+// the following code can be used to show the rectangle movement.
+var contentString = '<b>Rectangle moved.</b><br>' +
+      'New north-east corner: ' + ne.lat() + ', ' + ne.lng() + '<br>' +
+      'New south-west corner: ' + sw.lat() + ', ' + sw.lng();
+      
+  // Set the info window's content and position.
+  infoWindow.setContent(contentString);
+  infoWindow.setPosition(ne);
+
+  infoWindow.open(map);
+}
+
+
+
+//function that will be called when you submitted the information
+
+function SubReqInfo(){
+
+   
+    
+	city1= document.getElementById("c1").value;
+	city2= document.getElementById("c2").value;
+    num_cities_in_between= document.getElementById("No_Cities").value;
+
+/*if the number of cities one wants to visit in between is 
+ *greater tha zero than new form will be genrated to fill the city names
+ *after that finding the best route function will come into play */
+
+if(num_cities_in_between>0)
+{
+
+	var form2div = document.getElementById("Form_2");
+	var form2 = document.createElement('form');
+	form2.setAttribute("action"," ");
+	form2.setAttribute("method", "post");
+	form2div.appendChild(form2);
+	// generating the required text fields for input and storing in cities array
+	
+	for(var i=0; i< num_cities_in_between; i++)
+	{
+		var city_label = document.createElement('label');
+    	city_label.innerHTML = "City " + (i+1) + "  ";
+        form2div.appendChild(city_label);
+
+        var input_city = document.createElement('input');
+        input_city.setAttribute("type","text");
+		input_city.setAttribute("name", "dname");
+		var id1="city_"+ (i+1);
+		input_city.setAttribute("id", id1);
+        form2div.appendChild(input_city); 	
+
+        var breakline = document.createElement('br');
+        form2div.appendChild(breakline);		
+    }
+	
+	var submitelement = document.createElement('input'); // Append Submit Button
+	submitelement.setAttribute("type", "submit");
+	submitelement.setAttribute("name", "dsubmit");
+	submitelement.setAttribute("value", "Update");
+	form2div.appendChild(submitelement);
+	//adding onlick listerner to the update button
+	submitelement.addEventListener("click", MarkCities);
+	
+
+	
+}
+
+
+	geocoder = new google.maps.Geocoder(); //creating geocoder, will help get lat lng from the city name 
+	cities=[]; // all the cities mention in the 
+	//end of the for loop 
+	
+	geocoder.geocode({'address' : city2+",BC"}, function(results, status){
+		if (status == google.maps.GeocoderStatus.OK) {
+			var LatLng = {lat: results[0].geometry.location.lat(), lng:results[0].geometry.location.lng()};
+			
+			var marker = new google.maps.Marker({
+				position: LatLng,
+				map: map		
+			});	
+		}
+		else{
+			alert("Something went wrong while searching for the:" +status); 
+		}
+	 });
+	 
+	 
+	 geocoder.geocode({'address' : city1+",BC"}, function(results, status){
+		if (status == google.maps.GeocoderStatus.OK) {
+			var LatLng = {lat: results[0].geometry.location.lat(), lng:results[0].geometry.location.lng()};
+			var marker = new google.maps.Marker({
+				position: LatLng,
+				map: map		
+			});	
+		}
+		else{
+			alert("Something went wrong while searching for the:" +status); 
+		}
+	 });
+
+	
+	//Re-initializing the Total Distance to be covered which 
+	total_Distance=0;
+	
+	
+	
+		
+}
+
+
+//function to mark the slected cities on map to be visited
+function MarkCities()
+{
+for(var i=0; i<num_cities_in_between; i++)
+	{
+	    var id="city_"+ (i+1);
+		cities[i] = document.getElementById(id).value;
+		geocoder.geocode({'address' : cities[i]+',BC,CA'}, function(results, status){
+		if (status == google.maps.GeocoderStatus.OK) {
+			var LatLng = {lat: results[0].geometry.location.lat(), lng:results[0].geometry.location.lng()};
+			LatLngCities[i+1]= LatLng;
+			var marker = new google.maps.Marker({
+				position: LatLng, //LatLngCities[i],
+				map: map		
+			});	
+		}
+		else{
+			alert("Something went wrong while searching for the:" +status); 
+		}
+	 });
+		
+	}
+
+}	
+
+//variable to store shortest total distance to cover
+var total_Distance=0;
+
+
+
+
+// graph of all the cities in the BC for dijkstras algorithm to work
+const graph={
+PrinceRupert :{Terrace:144}, Terrace :{PrinceRupert:144, Hazelton:144}, Hazelton:{Terrace:144, Smithers:74.9},
+Smithers : { Hazelton: 74.9, Telkwa:15.0}, Telkwa: {Smithers:15.0, Granisle:78.4, BurnsLake:128}, Granisle: {Telkwa:78.4, BurnsLake: 98.4},
+BurnsLake: { Telkwa: 128, Granisle:98.4, FraserLake: 70.2}, FraserLake: {BurnsLake: 70.2, PrinceGeorge: 158}, PrinceGeorge:{FraserLake:158, DawsonCreek:403, Quesnel:121, McBride: 209},
+DawsonCreek: { PrinceGeorge: 403, FortSaintJohn: 74.8, PouceCoupe: 10.7}, FortSaintJohn: {DawsonCreek: 74.8}, PouceCoupe: { DawsonCreek: 10.7}, 
+Quesnel: { PrinceGeorge: 121, WilliamsLake: 119}, WilliamsLake: { Quesnel: 119, Clinton: 164}, McBride: {PrinceGeorge: 209, Valemount: 84.2},
+Clinton:{ WilliamsLakems:164, CacheCreek: 39.9, Pemberton: 203, Lytton: 164}, Valemount: { McBride: 84.2, Kamloops: 320}, CacheCreek: {Clinton: 39.9, Ashcroft: 11.2, Kamloops: 83.2, Lytton: 84.4, Pemberton: 185, Merritt: 146},
+Pemberton: { Clinton: 203, CacheCreek: 185, Lytton: 160, LionsBay: 123}, Lytton: {Pemberton: 160, Clinton:164, CacheCreek: 84.4, Ashcroft: 79.4, Merritt: 100, Princeton: 242, HarrisonHotSprings: 144, Chilliwack: 161, MapleRidge: 212, Abbotsford: 199}, Kamloops:{Valemount: 320, CacheCreek:83.2, Merritt:89.4, Chase: 57.2, Vernon: 116, Ashcroft: 120},
+Ashcroft: { CacheCreek: 11.2, Lytton: 79.4, Kamloops: 120, Merritt: 104}, Merritt: {CacheCreek:146, Lytton: 100, Kamloops: 89.4, Ashcroft: 104, WestKelowna: 120, Princeton: 89.8, Penticton: 153, Chilliwack: 171, HarrisonHotSprings:160, Abbotsford : 215, MapleRidge: 228}, LionsBay: { Pemberton: 123, NorthVancouver:29.4, Vancouver:30.9},
+Princeton:{ Lytton: 242, Merritt: 89.8, WestKelowna: 108, Penticton: 127, Keremeos: 66.5, Chilliwack: 184, HarrisonHotSprings: 173, Abbotsford:228, MapleRidge: 241}, HarrisonHotSprings:{ Lytton: 144, Merritt: 160, Princeton:173, Chilliwack: 40.1, Abbotsford: 45.7, MapleRidge:59.3}, Chilliwack:{ Lytton: 161, Merritt: 171, Princeton: 184, HarrisonHotSprings: 40.1, Abbotsford: 33.8, MapleRidge:99.4},
+MapleRidge:{ Lytton: 212, Merritt: 228, Princeton: 241, HarrisonHotSprings:40.1, Abbotsford: 33.8, MapleRidge: 99.4}, Abbotsford: { Lytton: 212, Merritt: 215, Princeton: 228, HarrisonHotSprings: 45.7, Chilliwack: 33.8, MapleRidge: 36.2, Langley: 29.2, WhiteRock: 42.9}, Chase:{ Kamloops: 57.2, Vernon: 90.6, SalmonArm: 52.2, Armstrong: 83.2}, Vernon: {Kamloops: 116, Armstrong: 22.9, Chase: 90.6, Kelowna: 50.4, Lumby: 26.5},
+WestKelowna:{Merritt:153, Princeton: 108, Kelowna: 7.8, Penticton: 55.5}, Penticton: { Merritt: 153, Princeton: 127, Keremeos: 48.0, Oliver: 41.9}, NorthVancouver:{ LionsBay: 30.9, Vancouver: 10.4, Burnaby: 15.0}, Vancouver: {LionsBay: 30.9, Burnaby: 13.4, NorthVancouver: 10.4, NewWestminster: 22.6, Richmond: 15.4}, Keremeos: { Princeton: 66.5, Penticton: 48.0, Oliver: 32.8, Osoyoos:48.1}, PittMeadows:{ MapleRidge: 36.2, Langley: 17.4, PortCoquitlam: 9.5, Surrey: 26.2, NewWestminster: 21.8, Burnaby: 26.1},
+Langley: { Abbotsford: 29.2, PittMeadows: 17.4, Surrey: 18.7, Delta: 36.7, WhiteRock: 19.3}, WhiteRock:{ Abbotsford: 42.9, Langley: 19.3, Delta: 25.0, Surrey: 20.8, NewWestminster: 34.3, Richmond: 42.0, Vancouver: 49.7}, SalmonArm: { Chase: 52.2, Enderby: 22.6, Reverstoke: 10.3}, Armstrong: { Kamloops: 108, Vernon: 22.9, Enderby: 15.5}, Kelowna: {Vernon: 50.4, WestKelowna: 7.8, Osoyoos: 247, Midway: 216}, Lumby:{ Vernon: 26.5, Nakusp: 168, Enderby: 52.8}, Oliver: { Penticton: 41.9, Keremeos: 32.8, Osoyoos: 20.8},
+Burnaby: { NorthVancouver: 15.0, Vancouver: 13.4, PittMeadows: 26.1, NewWestminster: 7.4, PortMoody: 13.1}, NewWestminster: { Vancouver: 22.6, PittMeadows: 21.8, WhiteRock: 34.3, Burnaby: 7.4, Richmond: 21.6, Surrey: 6.4}, Richmond: {Vancouver: 15.4, WhiteRock: 42.0, NewWestminster: 21.6, Delta: 20.3}, Osoyoos: { Keremeos: 48.1, Kelowna: 247, Oliver: 20.8, Midway: 69.9}, PortCoquitlam: { PittMeadows: 9.5, Coquitlam: 3.2, Surrey: 15.2},
+Surrey:{ PittMeadows: 26.2, Langley: 18.7, WhiteRock: 20.8, NewWestminster: 6.4, PortCoquitlam: 15.2, Delta: 25.7}, Delta: { Langley: 36.7, WhiteRock: 25.0, Richmond: 20.3, Surrey: 15.2}, Enderby:{ SalmonArm: 22.6, Armstrong: 15.5, Reverstoke: 111, Lumby: 52.8}, Reverstoke: { SalmonArm: 103, Enderby: 111, Nakusp: 105, Kaslo: 198, Golden: 148}, Midway:{ Kelowna: 216, Osoyoos: 69.9, Greenwood: 13.5}, Nakusp:{ Lumby: 168, Reverstoke: 105, Kaslo: 186, NewDenver: 46.2, GrandForks: 189}, Coquitlam:{ PortCoquitlam:3.2, PortMoody: 8.8, Anmore: 7.5},
+Kaslo:{ Reverstoke: 198, Nakusp: 186, NewDenver: 46.0, Nelson: 69.5, Creston: 126}, Golden:{Reverstoke: 148, RadiumHotSprings: 103}, Greenwood: { Midway: 13.5, GrandForks:32.5}, NewDenver:{ Nakusp: 46.2, Kaslo: 46.0, Silverton: 4.6}, GrandForks:{ Nakusp: 189,  Greenwood: 32.4, Rossland: 96.1, Castlegar: 97.9, Trail: 119}, PortMoody:{ Coquitlam: 8.8, Burnaby: 13.1}, Anmore:{ Coquitlam: 7.5}, Nelson:{ Kaslo: 69.5, Slocan: 69.1, Castlegar: 44.0, Salmo: 40.8, Creston: 124}, Creston:{ Kaslo: 126, Nelson: 124, Salmo: 82.9, Cranbrook: 105}, RadiumHotSprings:{ Golden: 103, CanalFlats: 61.5}, Silverton:{ NewDenver: 4.6, Slocan: 27.6}, Rossland: { GrandForks: 96.1, Warfield: 5.7, Castlegar: 57.7},
+Castlegar: { GrandForks: 97.9, Nelson: 44.0, Rossland: 57.7, Slocan: 68.6, Salmo: 42.1, Trail: 29.6}, Salmo:{ Nelson: 40.8, Creston: 82.9, Castlegar: 42.1, Fruitvale: 25.6}, Slocan: { Nelson: 69.1, Silverton: 27.6, Castlegar: 68.6}, Cranbrook:{ Creston: 105, Kimberley: 28.8, Fernie: 96.2}, CanalFlats:{ RadiumHotSprings: 61.5, Kimberley: 71.2, Cranbrook: 82.4}, Warfield:{ Rossland: 5.7, Trail: 4.5}, Trail: { Castlegar: 29.6, Warfield: 4.5, Montrose: 10.4}, Fruitvale:{ Salmo: 25.6, Montrose: 5.2}, Kimberley: { Cranbrook: 28.8, CanalFlats: 71.2}, Fernie:{ Cranbrook: 96.2}, Montrose:{ Fruitvale: 5.2, Trail: 10.4},
+Victoria: { Sidney: 26.8, ViewRoyal: 6.8}, Sidney:{ Victoria: 26.8, ViewRoyal: 6.8}, Colwood:{ ViewRoyal: 6.7, Langford: 3.4}, Langford:{ ViewRoyal: 10, Colwood:3.4}       
+    
+};
+
+
+var Graph = (function (undefined) {
+
+    //extracting keys(cities) from the adjacency list
+	var extractKeys = function (obj) {
+		var keys = [], key;
+		for (key in obj) {
+		    Object.prototype.hasOwnProperty.call(obj,key) && keys.push(key);
+		}
+		return keys;
+	}
+
+	
+	var sorter = function (a, b) {
+		return parseFloat (a) - parseFloat (b);
+	}
+
+	
+	//function to find the paths	
+	var findPaths = function (map, start, end, infinity) {
+		infinity = infinity || Infinity;
+
+		var costs = {},
+		    open = {'0': [start]},
+		    predecessors = {},
+		    keys;
+
+		var addToOpen = function (cost, vertex) {
+			var key = "" + cost;
+			if (!open[key]) open[key] = [];
+			open[key].push(vertex);
+		}
+
+		costs[start] = 0;
+
+		while (open) {
+			if(!(keys = extractKeys(open)).length) break;
+
+			keys.sort(sorter);
+
+			var key = keys[0],
+			    bucket = open[key],
+			    node = bucket.shift(),
+			    currentCost = parseFloat(key),
+			    adjacentNodes = map[node] || {};
+
+			
+			if (!bucket.length) delete open[key];
+
+			for (var vertex in adjacentNodes) {
+			    if (Object.prototype.hasOwnProperty.call(adjacentNodes, vertex)) {
+					var cost = adjacentNodes[vertex],
+					    totalCost = cost + currentCost,
+					    vertexCost = costs[vertex] ;
+                       
+					if ((vertexCost === undefined) || (vertexCost > totalCost)) {
+						costs[vertex] = totalCost;
+						addToOpen(totalCost, vertex);
+						predecessors[vertex] = node;
+					}
+				}
+			}
+		}
+
+		if (costs[end] === undefined) {
+			return null;
+		} else {
+			return predecessors;
+		}
+
+	}
+
+	
+//extracting the shortest path	
+var extractShortest = function (predecessors, end) {
+		var nodes = [],
+		    u = end;
+
+		while (u !== undefined) {
+			nodes.push(u);
+			u = predecessors[u];
+		}
+
+		nodes.reverse();
+		return nodes;
+	}
+
+	
+	
+//function to find the shortest path
+var findShortestPath = function (map, nodes) {
+		var start = nodes.shift(),
+		    end,
+		    predecessors,
+		    path = [],
+		    shortest;
+
+		while (nodes.length) {
+			end = nodes.shift();
+			predecessors = findPaths(map, start, end);
+
+			if (predecessors) {
+				shortest = extractShortest(predecessors, end);
+				if (nodes.length) {
+					path.push.apply(path, shortest.slice(0, -1));
+				} else {
+					return path.concat(shortest);
+				}
+			} else {
+				return null;
+			}
+
+			start = end;
+		}
+	}
+
+	
+	
+//storing best path to follow into the array
+var toArray = function (list, offset) {
+		try {
+			return Array.prototype.slice.call(list, offset);
+		} catch (e) {
+			var a = [];
+			for (var i = offset || 0, l = list.length; i < l; ++i) {
+				a.push(list[i]);
+			}
+			return a;
+		}
+	}
+
+	
+	
+	//creating the graph from the adjacency lsit
+	var Graph = function (map) {
+		this.map = map;
+	}
+
+	//returning th eshortest path
+	Graph.prototype.findShortestPath = function (start, end) {
+		if (Object.prototype.toString.call(start) === '[object Array]') {
+			return findShortestPath(this.map, start);
+		} else if (arguments.length === 2) {
+			return findShortestPath(this.map, [start, end]);
+		} else {
+			return findShortestPath(this.map, toArray(arguments));
+		}
+	}
+
+	Graph.findShortestPath = function (map, start, end) {
+		if (Object.prototype.toString.call(start) === '[object Array]') {
+			return findShortestPath(map, start);
+		} else if (arguments.length === 3) {
+			return findShortestPath(map, [start, end]);
+		} else {
+			return findShortestPath(map, toArray(arguments, 1));
+		}
+	}
+
+	return Graph;
+
+})();
+
+
+//function to find the distance to be covered 
+function computeDistance( show)
+{
+
+	for(var i=0; i<show[0].length; i++)
+	{
+	
+		for(var j=0;j< show[0][i].length-1; j++)
+		{
+		
+			total_Distance = total_Distance + graph[show[0][i][j]][show[0][i][j+1]]
+		
+		
+		}
+	
+	
+	
+	}
+	
+
+
+
+document.getElementById('total_distance').innerHTML=total_Distance + "  KiloMeters";
+
+}
+
+
+
+
+//array to store list of cities
+var show=[];
+
+
+
+
+
+
+
+
+
+// function to be called when the djikstras button is called
+
+function Dijkstra()
+{
+
+ result= new Graph(graph);
+
+var show2=[];
+var y=0;
+var k=0;
+var onec=city1;
+var twoc;
+var cityNames="";
+// if the number of cities to between two cities in between are greater than 0
+if(cities != null){
+show[k]=[];
+while(cities[y]!=null){ 
+ twoc= cities[y];
+ 
+ show2=result.findShortestPath(onec, twoc);
+ show[k][y]= show2;
+ 
+ onec=twoc;
+ y++;
+ }
+show[k][y]= result.findShortestPath(onec, city2);
+}
+
+
+// if you want to go directly from start to destination
+else{
+
+
+show= result.findShortestPath(onec, city2);
+
+}
+
+for(var i=0; i< show[0].length;i++)
+{
+
+cityNames= cityNames + show[0][i]
+
+if(i!=show[0].length-1)
+{
+cityNames= cityNames + "            <-----  Then ------>   "
+
+}
+
+
+}
+
+
+
+
+//showing the list of cities two visit when moving from start point to destination
+document.getElementById('result_label').innerHTML = cityNames;
+
+//printing the shortest distance to cover to reach the destination
+computeDistance(show);
+
+}
+
+
+//code to show the direction of the map
+var roads;
+///getting the elavation data along the road
+var elevator; 
+
+//drawing the road between start and destination
+function Directions(){
+	roads= new google.maps.MVCArray();
+    var ltlng;
+	var showDirections = new google.maps.DirectionsRenderer();
+
+	var directionService= new google.maps.DirectionsService();
+	
+	//converting mvc array 
+	var path=[];
+
+	
+	var u=0;
+	
+	var poly = new google.maps.Polyline({
+        map: map,
+        strokeColor: '#F3443C'
+    });
+	
+	
+	
+	//setting the map to be used to show the roads
+	showDirections.setMap(map);
+	
+	for(var i=0; i<show[0].length; i++)
+	{	
+		for(var j=0;j< show[0][i].length-1; j++)
+		{
+		   //path request
+			var request = {
+			origin: show[0][i][j]+ ',BC',
+			destination: show[0][i][j+1] + ',BC',
+			travelMode: 'DRIVING'
+			}
+			
+			//getting the direction services
+		directionService.route(request, function(result, status){
+			if(status="ok")
+			{
+			  for (var i = 0, len = result.routes[0].overview_path.length; i < len; i++) {
+                        roads.push(result.routes[0].overview_path[i]);
+						
+	
+						//document.getElementById('result_label').innerHTML = roads.length;
+                    }
+					
+					 ltlng=roads.getArray();
+					 elevator= new google.maps.ElevationService;
+					
+					displayPathElevation(ltlng, elevator, map);
+					for(var i=0; i< roads.length-1;i++)
+						{
+							path = { lat:Number(ltlng[i][0]), lng:Number(ltlng[i][1])};//  new google.maps.LatLng(Number(ltlng[i][0]), Number(ltlng[i][1]));;
+						}
+                    poly.setPath(roads);
+			
+			}
+		
+                }
+	     );
+		}
+
+	}
+	
+	
+	
+	
+//path for testing
+var path1 = [
+            {lat: 36.579, lng: -118.292},  // Mt. Whitney
+            {lat: 36.606, lng: -118.0638},  // Lone Pine
+            {lat: 36.433, lng: -117.951},  // Owens Lake
+            {lat: 36.588, lng: -116.943},  // Beatty Junction
+            {lat: 36.34, lng: -117.468},  // Panama Mint Springs
+            {lat: 36.24, lng: -116.832}];
+	
+
+	
+	
+
+}
+
+
+
+
+
+
+var hillClimbing=[];
+ 
+//getting google visulaization package to visualize the elevation data in the form of bar chart 
+google.load('visualization', '1', {packages: ['columnchart']});
+ 
+//function to display path elevation
+function displayPathElevation(path, elevator, map) {
+ // Load the Visualization API and the columnchart package.
+
+        // Display a polyline of the elevation path.
+        new google.maps.Polyline({
+          path: path,
+          strokeColor: '#0000CC',
+          strokeOpacity: 0.4,
+          map: map
+        });
+
+        // Create a PathElevationRequest object using this array.
+        // Ask for 256 samples along that path.
+        // Initiate the path request.
+        elevator.getElevationAlongPath({
+          'path': path,
+          'samples': 256 // maximum allowed samples from request between two points
+        }, plotElevation);
+      }
+
+      // Takes an array of ElevationResult objects, draws the path on the map
+      // and plots the elevation profile on a Visualization API ColumnChart.
+      function plotElevation(elevations, status) {
+        var chartDiv = document.getElementById('chartDiv');
+        if (status !== 'OK') {
+          // Show the error code inside the chartDiv.
+          chartDiv.innerHTML = 'Cannot show elevation: request failed because ' +
+              status;
+          return;
+        }
+		
+		hillClimbing= elevations;
+		
+        // Create a new chart in the elevation_chart DIV.
+        var chart = new google.visualization.ColumnChart(chartDiv);
+
+        // Extract the data from which to populate the chart.
+        // Because the samples are equidistant, the 'Sample'
+        // column here does double duty as distance along the
+        // X axis.
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Sample');
+        data.addColumn('number', 'Elevation');
+        for (var i = 0; i < elevations.length; i++) {
+          data.addRow(['', elevations[i].elevation]);
+        }
+
+        // Draw the chart using the data within its DIV.
+        chart.draw(data, {
+          height: 150,
+          legend: 'none',
+          titleY: 'Elevation (m)'
+        });
+      
+}
+
+
+//function to get the highest point
+function HighestPoint()
+{
+
+var size= hillClimbing.length;
+var sampleElevation=[];
+var sampleIndexes=[];
+
+
+for(var i=0; i< 100; i++)
+{
+sampleElevation[i]= Math.floor(Math.random()*size);
+
+//sampleIndexes[i]= Array.prototype.findIndex(sampleElevation[i]);
+} 
+
+
+//var highestRandomIndex = Array.prototype.find(Math.max(sampleElevation));
+
+//document.getElementById("Highest Point").innerHTML= hillClimbing.toString();
+/*
+
+
+
+Function not been implimented, unable to get the elevations of each point on the road
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+}
+
+
+</script>
+
+
+<script async defer 
+	src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrJ6_SnJX9i77bI48jHI1olXhDWqU9FwQ&callback=initMap">
+</script>
+
+
+
+<!-- popup when fill the required information is pressed 
+<div class= "popup" onClick="fillingInfo()"> Fill the required informaton
+   <span class = "popup" id = " infopop"> Fill the information</span>
+ </div>-->
+
+<!-- adding the css -->
+
+
+
+
+<!-- form-->
+<form>
+<b>Your City:</b><br>
+<input type="text" name="Your_City", id="c1"><br>
+<b>City You want to visit:</b><br>
+<input type="text" name="To_Visit" id="c2"><br>
+
+<b>Number of Cities to visit in between:</b><br>
+<input type="text" name ="No_Cities", id="No_Cities"><br>
+
+<input type="button" id="Sub" onclick="SubReqInfo()" value="Submit">
+</form>
+
+<!-- creating the div for the new form. that will be created if the number of cities between starting city to the destination id > 0  -->
+<div id="Form_2"></div>
+
+
+
+<!-- creating the div on the web page to show the shortest diatance between two cities or path betweent wwo cities-->
+<div id="ShowResult">
+<br>
+<label><b>Result: </b></label>
+<label id="result_label"> </label>
+<br>
+<label ><b>Total Distance to Cover:   </b></label>
+<label id="total_distance"></label>
+<br>
+<br>
+
+</div>
+ 
+<label><b> Showing Elevation Along the Path</b></label>
+<br>
+<!-- div for showing the chart --> 
+<div id = "chartDiv"></div> 
+ 
+<br>
+<br>
+<br>
+<br>
+<label><b>Highest Point: </b><label><br>
+<label id="Highest Point">0</label>
+
+
+ 
+ 
+ 
+
+ 
+  
+ 
+
+
+
+
+<!--adding general elements to the webpage -->
+<div class="btn-group">
+<button type ="button" onClick="Dijkstra()"> Compute the Shortest Path Using Dijkstra's </button></ul>
+<button type = "button" onClick="Directions()"> Show directions on map </button></ul>
+<button type = "button" onClick="HighestPoint()"> Return the highest point on the road </button></ul>
+</div>
+
+
+
+
+  </body>
+</html>
